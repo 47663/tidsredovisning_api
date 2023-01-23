@@ -288,6 +288,57 @@ function test_UppdateraAktivitet(): string {
  */
 function test_RaderaAktivitet(): string {
     $retur = "<h2>test_RaderaAktivitet</h2>";
-    $retur .= "<p class='ok'>Testar radera aktivitet</p>";
+try {
+    // Testa felaktig id (-1)
+    $svar= radera(-1);
+    if ($svar->getStatus()===400){
+        $retur.= "<p class='ok'>Radera post med negativt tal ger förväntat svar 400</p>";
+    } else {
+        $retur.= "<p class='error'>Radera post med negativt tal ger {$svar->getStatus()} "."inte förväntat svar 400</p>";
+    }
+    // Testa felaktig id (sju)
+    $svar= radera((int)"sju");
+    if ($svar->getStatus()===400){
+        $retur.= "<p class='ok'>Radera post med felaktigt id ('sju') ger förväntat svar 400</p>";
+    } else {
+        $retur.= "<p class='error'>Radera post med felaktigt id ('sju') ger {$svar->getStatus()} "."inte förväntat svar 400</p>";
+    }
+    // Testa id som inte finns (100)
+    $svar= radera(100);
+    if ($svar->getStatus()===200 && $svar->getContent()->result===false){
+        $retur .= "<p class='ok'>Radera post med id som inte finns (100) ger förväntat svar 200 "
+                . "och result=false</p>";
+    } else {
+        $retur .="<p class='error'>Radera post med id som inte finns (100) ger {$svar->getStatus()} "
+                . "inte förväntat svar 200</p>";
+                
+                
+    }
+    // Testa redara nyskapat id 
+    $db= connectDb();
+    $db->beginTransaction();
+    $nyPost=sparaNy("Ni<<e");
+    if ($nyPost->getStatus()!==200){
+        throw new Exception("Skapa ny post misslyckades", 10001);
+    }
+    
+    $nyttId= (int) $nyPost->getContent()->id;
+    $svar= radera($nyttId);
+    if ($svar->getStatus()===200 && $svar->getContent()->result===true){
+        $retur .= "<p class='ok'>Radera post med nyskapat id ger förväntat svar 200 "
+                . "och result=true</p>";
+    } else {
+        $retur .="<p class='error'>Radera post med nyskapat id ger {$svar->getStatus()} "
+                . "inte förväntat svar 200</p>";
+    }
+} catch (Exception $ex) {
+    $db->rollBack();
+    if($ex->getCode()===10001){
+    $retur.="<p class='error'>Spara ny post misslyckades, uppdatera går inte att testa!!!</p>";
+    } else {
+        $retur.="<p class='error'>Fel inträffade:<br>{$ex->getMessage()}</p>";
+}
+
+    }
     return $retur;
 }

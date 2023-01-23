@@ -93,7 +93,7 @@ function hamtaEnskild(int $id): Response {
  * @return Response
  */
 function sparaNy(string $aktivitet): Response {
-    // Kontrollera idata
+    // Kontrollera indata
     $kontrolleradAktivitet=trim($aktivitet); 
     $kontrolleradAktivitet  =filter_var($kontrolleradAktivitet, FILTER_SANITIZE_ENCODED);
     
@@ -187,5 +187,37 @@ return new Response($out, 200);
  * @return Response
  */
 function radera(int $id): Response {
-    return new Response("Raderar aktivitet $id", 200);
+
+    // Kontrollera ID
+    $kollatID=filter_var($id, FILTER_VALIDATE_INT);
+    if (!$kollatID || $kollatID<1){
+        $out=new stdClass();
+        $out->error=["Felaktig indata","$id är inget giltigt heltal"];
+        return new Response($out,400);
+    }
+
+    try {
+    // Koppla mot databas
+    $db=connectDb();
+    // Skicka radera-kommando
+    $stmt = $db->prepare("DELETE FROM kategorier"
+        . " WHERE id=:id");
+    $stmt->execute(["id"=> $kollatID]);
+     $antalPoster = $stmt->rowCount();
+    // Kontrollera databas svar och skapa utdata-svar
+    $out=new stdClass();
+    if ($antalPoster>0){
+        $out->result=true;
+        $out->message=["Radera lyckades","$antalPoster post(er) raderades"];
+    } else {
+        $out->result=false;
+        $out->message=["Radera misslyckades","Inga poster raderades"];
+    }
+
+    return new Response($out);
+    } catch (Exception $ex){
+        $out = new stdClass();
+        $out->error = ["Något gick fel vid radera",$ex->getMessage()];
+        return new Response($out, 400);
+    }
 }
