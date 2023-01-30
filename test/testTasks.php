@@ -1,7 +1,7 @@
 <?php
 
 declare (strict_types=1);
-
+require_once __DIR__.'/../src/tasks.php';
 /**
  * Funktion för att testa alla aktiviteter
  * @return string html-sträng med resultatet av alla tester
@@ -56,7 +56,38 @@ function test_HamtaAllaUppgifterDatum(): string {
  */
 function test_HamtaEnUppgift(): string {
     $retur = "<h2>test_HamtaEnUppgift</h2>";
-    $retur .= "<p class='ok'>Testar hämta en uppgift</p>";
+    try {
+        // Testa lägga dit tal
+        $svar= hamtaEnskildUppgift(-1);
+        if ($svar->getStatus()===400){
+            $retur.= "<p class='ok'>Hämta enskild med negativt tal ger förväntat svar 400</p>";
+        } else {
+            $retur.= "<p class='error'>Hämta enskild med negativt tal ger {$svar->getStatus()} "."inte förväntat svar 400</p>";
+        }
+        // Testa för stort tal
+        $svar= hamtaEnskildUppgift(100);
+        if ($svar->getStatus()===400){
+            $retur.= "<p class='ok'>Hämta enskild med stort tal ger förväntat svar 400</p>";
+        } else {
+            $retur.= "<p class='error'>Hämta enskild med stort (100) tal ger {$svar->getStatus()} "."inte förväntat svar 400</p>";
+        }
+        // Testa bokstäver
+        $svar= hamtaEnskildUppgift((int)"sju");
+        if ($svar->getStatus()===400){
+            $retur.= "<p class='ok'>Hämta enskild med bokstäver tal ger förväntat svar 400</p>";
+        } else {
+            $retur.= "<p class='error'>Hämta enskild med bokstäver('sju') tal ger {$svar->getStatus()} "."inte förväntat svar 400</p>";
+        }
+        // Testa giltigt tal
+        $svar= hamtaEnskildUppgift(3);
+        if ($svar->getStatus()===200){
+            $retur.= "<p class='ok'>Hämta enskild med 3 ger förväntat svar 200</p>";
+        } else {
+            $retur.= "<p class='error'>Hämta enskild med 3 ger {$svar->getStatus()} "."inte förväntat svar 200</p>";
+        }
+    } catch (exception $ex) {
+        $retur .="<p class='error'>Något gick fel, meddelandet säger:<br> {$ex->getMessage()}</p>";
+    }
     return $retur;
 }
 
@@ -66,8 +97,9 @@ function test_HamtaEnUppgift(): string {
  */
 function test_SparaUppgift(): string {
     $retur = "<h2>test_SparaUppgift</h2>";
-    $retur .= "<p class='ok'>Testar spara uppgift</p>";
+    $retur .= "<p class='ok' >Borde jag gå in på git?</p>";
     return $retur;
+     echo  "bara om man gör det rätt";
 }
 
 /**

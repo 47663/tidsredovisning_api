@@ -32,16 +32,16 @@ function tasklists(Route $route): Response {
 function tasks(Route $route, array $postData): Response {
     try {
         if (count($route->getParams()) === 1 && $route->getMethod() === RequestMethod::GET) {
-            return hamtaEnskild((int) $route->getParams()[0]);
+            return hamtaEnskildUppgift((int) $route->getParams()[0]);
         }
         if (count($route->getParams()) === 0 && $route->getMethod() === RequestMethod::POST) {
-            return sparaNy($postData);
+            return sparaNyUppgift($postData);
         }
         if (count($route->getParams()) === 1 && $route->getMethod() === RequestMethod::PUT) {
-            return uppdatera((int) $route->getParams()[0], $postData);
+            return uppdateraUppgift((int) $route->getParams()[0], $postData);
         }
         if (count($route->getParams()) === 1 && $route->getMethod() === RequestMethod::DELETE) {
-            return radera((int) $route->getParams()[0]);
+            return raderaUppgift((int) $route->getParams()[0]);
         }
     } catch (Exception $exc) {
         return new Response($exc->getMessage(), 400);
@@ -74,8 +74,39 @@ function hamtaDatum(DateTimeInterface $from, DateTimeInterface $tom): Response {
  * @param int $id Id för post som ska hämtas
  * @return Response
  */
-function hamtaEnskild(int $id): Response {
-    return new Response("Hämta task $id", 200);
+function hamtaEnskildUppgift(int $id): Response {
+    $kollatID = filter_var ($id, FILTER_VALIDATE_INT);
+    if(!$kollatID || $kollatID < 1){
+        $out = new stdClass();
+        $out->error = ["felaktig indata", "$id är inget giltigt heltal"];
+        return new Response ($out, 400);
+    }
+    //koppla mot databas
+    $db= connectDb();
+    //förbered pch exekvera sql
+    $stmt=$db->prepare("SELECT t.id, kategoriId, datum, tid, beskrivning, kategori "
+    ."FROM uppgifter t "
+    ." INNER JOIN kategorier a ON kategoriId=a.id "
+    . "WHERE t.id=:id ");
+
+    $stmt->execute(["id"=>$kollatID]);
+    //returnera svaret
+    if($row=$stmt->fetch()){
+        $out= new stdClass;
+        $out->id=$row["id"];
+        $out->activity=$row["kategoriId"];
+        $out->date=$row["datum"];
+        $out->time=$row["tid"];
+        $out->description=$row["beskrivning"];
+        $out->activity=$row["kategori"];
+
+        return new Response ($out);
+    }else{
+        $out=new stdClass();
+        $out->error=["fel vid hämtning"];
+        return new Response ($out, 400);
+    }
+
 }
 
 /**
@@ -83,7 +114,7 @@ function hamtaEnskild(int $id): Response {
  * @param array $postData indata för uppgiften
  * @return Response
  */
-function sparaNy(array $postData): Response {
+function sparaNyUppgift(array $postData): Response {
     return new Response("Sparar ny task", 200);
 }
 
@@ -93,7 +124,7 @@ function sparaNy(array $postData): Response {
  * @param array $postData ny data att sparas
  * @return Response
  */
-function uppdatera(int $id, array $postData): Response {
+function uppdateraUppgift(int $id, array $postData): Response {
     return new Response("Uppdaterar task $id", 200);
 }
 
@@ -102,6 +133,6 @@ function uppdatera(int $id, array $postData): Response {
  * @param int $id Id för posten som ska raderas
  * @return Response
  */
-function radera(int $id): Response {
+function raderaUppgift(int $id): Response {
     return new Response("Raderar task $id", 200);
 }
